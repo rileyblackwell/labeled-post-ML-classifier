@@ -1,0 +1,6 @@
+*.exe
+*.out
+*.out.correct
+*.csv
+.vscode
+Makefile
