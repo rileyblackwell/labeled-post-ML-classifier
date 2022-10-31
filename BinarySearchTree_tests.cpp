@@ -3,6 +3,7 @@
 #include <sstream>
 #include <string>
 
+
 TEST(test_bst_ctor) {
     BinarySearchTree<int> b;
     ASSERT_TRUE(b.empty());
