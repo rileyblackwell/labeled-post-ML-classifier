@@ -1,5 +1,6 @@
 *.exe
 *.out
+*.out.txt
 *.out.correct
 *.csv
 .vscode
