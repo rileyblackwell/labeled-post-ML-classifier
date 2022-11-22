@@ -7,13 +7,14 @@
 #include <vector>
 #include <utility>
 #include <cmath>
+#include <ctime>
 
 using namespace std;
 
 
 class Classifier {
     public:
-        // MODIFIES: train_csv
+        // MODIFIES: words, labels
         // EFFECTS: Reads in and stores the training posts from train_csv.  Creates a set of unique labels
         // and a set of unique words.
         Classifier(csvstream &train_csv, const bool enable_debug) : debug(enable_debug), num_training_posts(0) {
@@ -42,7 +43,7 @@ class Classifier {
             if (debug) {    
                 cout << "vocabulary size = " << words.size() << endl;
             }
-            cout << endl; // print extra new line    
+            cout << endl; // print extra new line  
         }
 
         void train() {
@@ -53,8 +54,8 @@ class Classifier {
                         num_posts_with_label_and_word[post.first][word] += 1;
                     }   
                 }
-            }
-              
+            }    
+
             for (const string &label : labels) {
                 for (const auto &post : posts) {
                     if(post.first == label) {
@@ -83,66 +84,55 @@ class Classifier {
                     }
                 }
                 cout << endl; // print extra new line                           
-            }        
+            }                
         }
 
-        void prediction(csvstream &test_csv) {
+        void prediction(csvstream &test_csv) { 
             map<string, string> row;
-            double best_lp_score = 0;
-            string best_lp_label;
-            bool first_lp = true;
-            int num_correct_posts = 0;
+            double best_log_prob_score = 0;
+            string best_log_prob_label;
+            bool first_log_prob_score = true;
             int num_posts = 0;
+            int num_correct_posts = 0;
             cout << "test data:" << endl;
             while (test_csv >> row)  {
                 num_posts += 1;
-                best_lp_score = 0;
-                best_lp_label = "";
-                first_lp = true;
+                best_log_prob_score = 0;
+                best_log_prob_label = "";
+                first_log_prob_score = true;
                 for (const string &label : labels) {
-                    double log_prior = log(static_cast<double>(num_posts_with_label[label]) 
+                    double log_prob_score = log(static_cast<double>(num_posts_with_label[label]) 
                                                  / static_cast<double>(num_training_posts));
                     set<string> post_words = unique_words(row["content"]);
                     for (const string &word : post_words) {
-                        if (num_posts_with_label_and_word[label].find(word) != num_posts_with_label_and_word[label].end()) {
-                            const double log_likelihood = log(static_cast<double>(num_posts_with_label_and_word[label][word]) 
-                                                              / static_cast<double>(num_posts_with_label[label]));
-                            log_prior += log_likelihood;
-                        } else if (num_posts_with_word.find(word) != num_posts_with_word.end()) {
-                            const double log_likelihood = log(static_cast<double>(num_posts_with_word[word]) 
-                                                              / static_cast<double>(num_training_posts));
-                            log_prior += log_likelihood;    
-                        } else {
-                            const double log_likelihood = log(1 / static_cast<double>(num_training_posts));
-                            log_prior += log_likelihood;    
-                        }
+                        log_prob_score += calculate_log_likelihood(label, word);
                     }
-                    if (first_lp) {
-                        best_lp_score = log_prior;
-                        best_lp_label = label;
-                        first_lp = false;
-                    } else if (log_prior > best_lp_score) {
-                        best_lp_score = log_prior;
-                        best_lp_label = label;    
-                    } else if (log_prior == best_lp_score) {
-                        if (label > best_lp_label) {
-                            best_lp_score = log_prior;
-                            best_lp_label = label; 
+                    if (first_log_prob_score) {
+                        best_log_prob_score = log_prob_score;
+                        best_log_prob_label = label;
+                        first_log_prob_score = false;
+                    } else if (log_prob_score > best_log_prob_score) {
+                        best_log_prob_score = log_prob_score;
+                        best_log_prob_label = label;    
+                    } else if (log_prob_score == best_log_prob_score) {
+                        if (label > best_log_prob_label) {
+                            best_log_prob_score = log_prob_score;
+                            best_log_prob_label = label; 
                         }
                     }
                 }
-                cout << "  correct = " << row["tag"] << ", predicted = " << best_lp_label
-                     << ", log-probability score = " << best_lp_score << endl
+                cout << "  correct = " << row["tag"] << ", predicted = " << best_log_prob_label
+                     << ", log-probability score = " << best_log_prob_score << endl
                      << "  content = " << row["content"] << endl << endl;
-                if (best_lp_label == row["tag"]) {
+                if (best_log_prob_label == row["tag"]) {
                     num_correct_posts += 1;
                 }
             }
-            cout << "performance: " << num_correct_posts << " / " << num_posts << " posts predicted correctly" << endl;             
+            cout << "performance: " << num_correct_posts << " / " << num_posts << " posts predicted correctly" << endl;                 
         }
     
     private:
-        // EFFECTS: Return a set of unique whitespace delimited words.x
+        // EFFECTS: Returns a set of unique whitespace delimited words.x
         set<string> unique_words(const string &str) {
           istringstream source(str);
           set<string> words;
@@ -153,7 +143,20 @@ class Classifier {
           return words;
         }
 
-        bool debug;
+        // EFFECTS: Returns the log-likelihood of word.
+        double calculate_log_likelihood(const string &label, const string &word) {
+            if (num_posts_with_label_and_word[label].find(word) != num_posts_with_label_and_word[label].end()) {
+                return log(static_cast<double>(num_posts_with_label_and_word[label][word]) 
+                                                  / static_cast<double>(num_posts_with_label[label]));                           
+            } else if (num_posts_with_word.find(word) != num_posts_with_word.end()) {
+                return log(static_cast<double>(num_posts_with_word[word]) 
+                                                  / static_cast<double>(num_training_posts));                            
+            } else {
+                return log(1 / static_cast<double>(num_training_posts));                          
+            }
+        }
+
+        bool debug; // print debug output
         int num_training_posts;
         vector<pair<string, set<string>>> posts; 
         set<string> words;
@@ -163,7 +166,8 @@ class Classifier {
         map<string, int> num_posts_with_label;         
 };
  
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) { 
+    auto start_time = time(nullptr);
     cout.precision(3);    
     
     if (!(argc == 3 || argc == 4)) {
@@ -191,7 +195,9 @@ int main(int argc, char *argv[]) {
         cout << "Error opening file: " << argv[1] << endl;
         return 1;
     }
-   
+    auto end_time = time(nullptr);
+    cout << difftime(end_time, start_time) << endl;
+  
     return 0;
 }
 
