@@ -6,7 +6,6 @@
 #include <vector>
 #include <utility>
 #include <cmath>
-#include <ctime>
 
 using namespace std;
 
@@ -166,7 +165,6 @@ class Classifier {
 };
  
 int main(int argc, char *argv[]) { 
-    // auto start_time = time(nullptr);
     cout.precision(3);    
     
     if (!(argc == 3 || argc == 4)) {
@@ -194,8 +192,6 @@ int main(int argc, char *argv[]) {
         cout << "Error opening file: " << argv[1] << endl;
         return 1;
     }
-    // auto end_time = time(nullptr);
-    // cout << endl << difftime(end_time, start_time) << endl;
   
     return 0;
 }
