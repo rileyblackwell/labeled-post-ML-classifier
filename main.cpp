@@ -12,11 +12,12 @@ using namespace std;
 
 class Classifier {
     public:
+        // MODIFIES: debug, num_trainig_posts
+        // EFFECTS: Sets debug to true or false. Initializes the number of trainging posts to be 0.
         Classifier(const bool enable_debug) : debug(enable_debug), num_training_posts(0) {}
 
-        // MODIFIES: words, labels, num_posts_with_word, num_posts_with_label, num_posts_with_label_and_word
-        // EFFECTS: Reads in and stores the training posts from train_csv.  Creates a set of unique labels
-        // and a set of unique words.
+        // MODIFIES: num_posts_with_word, num_posts_with_label, num_posts_with_label_and_word
+        // EFFECTS:    
         void train(csvstream &train_csv) {
             if (debug) {
                 cout << "training data:" << endl;
@@ -53,17 +54,18 @@ class Classifier {
             }                
         }
 
+        // EFFECTS: 
         void prediction(csvstream &test_csv) { 
             cout << "test data:" << endl;
             
             map<string, string> post;
-            int num_posts = 0;
+            int num_testing_posts = 0;
             int num_correct_posts = 0;
             bool first_log_prob_score = true;
             double best_log_prob_score = 0;
             string best_log_prob_label; 
             while (test_csv >> post)  {
-                num_posts += 1;
+                num_testing_posts += 1;
                 first_log_prob_score = true;
                 best_log_prob_score = 0;
                 best_log_prob_label = "";
@@ -93,7 +95,7 @@ class Classifier {
                 }
             }
 
-            cout << "performance: " << num_correct_posts << " / " << num_posts << " posts predicted correctly" << endl;                 
+            cout << "performance: " << num_correct_posts << " / " << num_testing_posts << " posts predicted correctly" << endl;                 
         }
     
     private:
@@ -188,6 +190,7 @@ int main(int argc, char *argv[]) {
         Classifier classifier(debug);
         classifier.train(train_csv);
         classifier.prediction(test_csv);
+        
     } catch (csvstream_exception &e) {
         cout << "Error opening file: " << argv[1] << endl;
         return 1;
