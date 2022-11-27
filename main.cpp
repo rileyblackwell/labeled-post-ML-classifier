@@ -17,7 +17,8 @@ class Classifier {
         Classifier(const bool enable_debug) : debug(enable_debug), num_training_posts(0) {}
 
         // MODIFIES: num_posts_with_word, num_posts_with_label, num_posts_with_label_and_word
-        // EFFECTS:    
+        // EFFECTS: Reads in the training posts from train_csv.  Calculates and then stores the training results
+        // in the maps- num_posts_with_word, num_posts_with_label, and num_posts_with_label_and_word.    
         void train(csvstream &train_csv) {
             if (debug) {
                 cout << "training data:" << endl;
@@ -54,7 +55,9 @@ class Classifier {
             }                
         }
 
-        // EFFECTS: 
+        // EFFECTS: Reads in the testing posts from test_csv.  Calculates a
+        // log-probability score for each of the possible labels for a given post.
+        // Predicts the label with the highest log-prob score for each post.   
         void prediction(csvstream &test_csv) { 
             cout << "test data:" << endl;
             
@@ -190,7 +193,7 @@ int main(int argc, char *argv[]) {
         Classifier classifier(debug);
         classifier.train(train_csv);
         classifier.prediction(test_csv);
-        
+
     } catch (csvstream_exception &e) {
         cout << "Error opening file: " << argv[1] << endl;
         return 1;
